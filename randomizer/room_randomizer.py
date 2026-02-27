@@ -2,8 +2,8 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
+from tabulate import tabulate
 
-# from tabulate import tabulate   # I commented this line out bcos you will need to `pip install tabulate` before use
 from group2 import first_lastname, group_ls
 
 
@@ -21,17 +21,17 @@ def shuffler(
     return pd.Series(grp_ls, dtype="string")
 
 
-def into_rooms(grp_ls: pd.Series) -> pd.DataFrame:
-    """
-    Takes a panda Series as arguement
-    reshapes the values to 7 columns, leaving the rows flexible
-    Returns a panada dataframe with column name Room 1 - 7
-    """
-    df = pd.DataFrame(
-        grp_ls.values.reshape(-1, 7),
-        columns=["Room 1", "Room 2", "Room 3", "Room 4", "Room 5", "Room 6", "Room 7"],
-    )
-    return df
+def put_in_rooms(grp: pd.Series, n_rooms, fill=pd.NA) -> pd.DataFrame:
+    n_in_room = (grp.size + n_rooms - 1) // n_rooms  # ceil dividision
+    expected_total_in_rooms = n_rooms * n_in_room
+
+    if grp.size < expected_total_in_rooms:
+        # number of missing values that should be added
+        pad = pd.Series([fill] * (expected_total_in_rooms - grp.size), dtype=grp.dtype)
+        grp = pd.concat([grp, pad], ignore_index=True)
+
+    grp.index = pd.MultiIndex.from_product([np.arange(n_in_room), np.arange(n_rooms)])
+    return grp.unstack(level=1)
 
 
 if __name__ == "__main__":
@@ -39,18 +39,18 @@ if __name__ == "__main__":
         try:
             raw = input("Input the Week Number: ")
             seed = int(raw)
+            rooms = int(input("Enter Number of Rooms: "))
             mixer = shuffler(group_ls, seed)
-            print(into_rooms(mixer).to_string(index=False, justify="center"))
 
             # incase you install the `tabulate` you can unccoment the print below an comment the one above
-            # print(
-            #     tabulate(
-            #         into_rooms(mixer),
-            #         headers="keys",
-            #         tablefmt="pretty",
-            #         colalign=("left", "right", "center"),
-            #     )
-            # )
+            print(
+                tabulate(
+                    put_in_rooms(mixer, rooms),
+                    headers="keys",
+                    tablefmt="pretty",
+                    colalign=("left", "right", "center"),
+                )
+            )
             break
         except ValueError:
             remaining = 2 - i
