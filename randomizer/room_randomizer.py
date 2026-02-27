@@ -2,7 +2,9 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 from group2 import first_lastname, group_ls
 
@@ -42,18 +44,28 @@ if __name__ == "__main__":
             rooms = int(input("Enter Number of Rooms: "))
             mixer = shuffler(group_ls, seed)
 
-            # incase you install the `tabulate` you can unccoment the print below an comment the one above
-            print(
-                tabulate(
-                    put_in_rooms(mixer, rooms),
-                    headers="keys",
-                    tablefmt="pretty",
-                    colalign=("left", "right", "center"),
-                )
-            )
+            df = put_in_rooms(mixer, rooms).fillna("").astype(str)
+            console = Console()
+
+            table = Table(title=f"Room Assignments — Week {seed}", show_lines=True)
+            for col in df.columns:
+                table.add_column(str(col), justify="center", style="cyan")
+
+            for row in df.values.tolist():
+                table.add_row(*row)
+
+            console.print(table)
             break
+
         except ValueError:
             remaining = 2 - i
-            print(f"'{raw}' is not a valid integer. {remaining} attempt(s) left.")
+            console.print(
+                f"[bold red]'{raw}'[/bold red] is not a valid integer. [yellow]{remaining} attempt(s) left.[/yellow]"
+            )
+
     else:
-        print("You've exceeded the max attempts. Rerun the program.")
+        console.print(
+            Panel(
+                "[bold red]You've exceeded the max attempts. Rerun the program.[/bold red]"
+            )
+        )
