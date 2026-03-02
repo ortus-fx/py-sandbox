@@ -24,6 +24,16 @@ def shuffler(
 
 
 def put_in_rooms(grp: pd.Series, n_rooms, fill=pd.NA) -> pd.DataFrame:
+    """
+    Arguments::
+            `pd.Series` to assign rooms
+            `n_rooms` ie. the number of columns
+            `fill` is the null value to add
+    Returns::
+            `pd.DataFrame` - Full rows & columns of elements assigned
+
+    Its Flexible to take any shape even when new data is added
+    """
     n_in_room = (grp.size + n_rooms - 1) // n_rooms  # ceil dividision
     expected_total_in_rooms = n_rooms * n_in_room
 
@@ -32,11 +42,14 @@ def put_in_rooms(grp: pd.Series, n_rooms, fill=pd.NA) -> pd.DataFrame:
         pad = pd.Series([fill] * (expected_total_in_rooms - grp.size), dtype=grp.dtype)
         grp = pd.concat([grp, pad], ignore_index=True)
 
-    grp.index = pd.MultiIndex.from_product([np.arange(n_in_room), np.arange(n_rooms)])
+    grp.index = pd.MultiIndex.from_product(
+        [np.arange(n_in_room), (f"Room {i + 1}" for i in np.arange(n_rooms))]
+    )
     return grp.unstack(level=1)
 
 
 if __name__ == "__main__":
+    console = Console()
     for i in range(3):
         try:
             raw = input("Input the Week Number: ")
@@ -44,8 +57,8 @@ if __name__ == "__main__":
             rooms = int(input("Enter Number of Rooms: "))
             mixer = shuffler(group_ls, seed)
 
+            # replace null value `<NA>` with empty space for beautiful table
             df = put_in_rooms(mixer, rooms).fillna("").astype(str)
-            console = Console()
 
             table = Table(title=f"Room Assignments — Week {seed}", show_lines=True)
             for col in df.columns:
